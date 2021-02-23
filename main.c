@@ -1,78 +1,84 @@
 #include <stdio.h>
 #include "fraction.h"
+#define fc Fraction_create
 
-int testFn (char * name, PFraction have, PFraction got);
-int lineTests ();
-int pointTest ();
-void alert (int count);
+void dotTests ();
+void lineTests ();
+void boolTests ();
 
-int main() {
-    int values = 0;
-    values += lineTests();
-    values += pointTest();
-    if (values != 0) alert(values);
+void testPFraction (PFraction expected, PFraction paramA, PFraction paramB, PFraction (*fn)(PFraction, PFraction), char *);
+void testBool (int expected, PFraction paramA, PFraction paramB, int (*fn)(PFraction, PFraction), char *);
 
-    printf("All tests complete.");
+int globalHasFailed = 0;
+
+int main () {
+    lineTests();
+    dotTests();
+    boolTests();
+
+    if (globalHasFailed) {
+        printf("\nNOTICE: SOME TESTS HAVE FAILED.\n");
+        return 1;
+    } else {
+        printf("\nAll tests passed.\n");
+        return 0;
+    }
 }
 
-int testFn (char * name, PFraction have, PFraction got) {
-    printf("Test: %s\n", name);
+void dotTests () {
+    testPFraction(fc(5, 12), fc(3, 2), fc(5, 18), Fraction_multiply, "Fraction_multiply");
+    testPFraction(fc(27, 5), fc(3, 2), fc(5, 18), Fraction_divide, "Fraction_divide");
+}
 
-    printf("\tExpected: ");
-    Fraction_show(have);
+void lineTests () {
+    testPFraction(fc(46, 5), fc(1, 5), fc(9, 1), Fraction_add, "Fraction_add");
+    testPFraction(fc(-44, 5), fc(1, 5), fc(9, 1), Fraction_subtract, "Fraction_subtract");
+}
 
+void boolTests () {
+    testBool(1, fc(1,2), fc(16, 32), Fraction_equal, "Fraction_equal");
+    testBool(0, fc(1, 2), fc(16, 32), Fraction_unequal, "Fraction_unequal");
+
+    testBool(1, fc(13, 27), fc(15, 31), Fraction_greater, "Fraction_greater");
+    testBool(0, fc(13, 27), fc(15, 31), Fraction_smaller, "Fraction_smaller");
+
+    testBool(1, fc(300, 150), fc(30, 15), Fraction_greaterOrEqual, "Fraction_greaterOrEqual");
+    testBool(1, fc(600, 300), fc(60, 30), Fraction_smallerOrEqual, "Fraction_smallerOrEqual");
+}
+
+//------ print methods
+
+void testPFraction (PFraction expected, PFraction paramA, PFraction paramB, PFraction (*fn)(PFraction, PFraction), char * name) {
+    PFraction returnValue = fn(paramA, paramB);
+
+    printf("Test %s with ", name);
+    Fraction_show(paramA);
+    printf(" and ");
+    Fraction_show(paramB);
+
+    printf("\n\tExpected: ");
+    Fraction_show(expected);
     printf("\n\tGot: ");
-    Fraction_show(got);
+    Fraction_show(returnValue);
 
-    int passed = Fraction_getNumerator(have) == Fraction_getNumerator(got) &&
-              Fraction_getDenominator(have) == Fraction_getDenominator(got);
-    printf("\n\tTest %s\n\n", passed ? "PASSED" : "FAILED");
-    return !passed;
+    printf("\n\tTest %s\n\n", Fraction_equal(expected, returnValue) ? "PASSED" : "FAILED");
+
+    if (!Fraction_equal(expected, returnValue)) globalHasFailed = 1;
+    Fraction_massDelete(4, returnValue, paramA, paramB, expected);
 }
 
-int lineTests () {
-    PFraction f1, f2, res, exp;
-    int testSum = 0;
+void testBool (int expected, PFraction paramA, PFraction paramB, int (*fn)(PFraction, PFraction), char * name) {
+    int returnValue = fn(paramA, paramB);
 
-    f1 = Fraction_create(1, 5);
-    f2 = Fraction_create(9, 1);
+    printf("Test %s with ", name);
+    Fraction_show(paramA);
+    printf(" and ");
+    Fraction_show(paramB);
 
-    res = Fraction_add(f1, f2);
-    exp = Fraction_create(46, 5);
-    testSum += testFn("Fraction_Add (1/5 + 9/1)", exp, res);
-    Fraction_massDelete(2, res, exp);
+    printf("\n\tExpected: %s\n", expected ? "TRUE" : "FALSE");
+    printf("\tGot: %s\n", returnValue ? "TRUE" : "FALSE");
+    printf("\tTest %s\n\n", expected == returnValue ? "PASSED" : "FAILED");
 
-    res = Fraction_subtract(f2, f1);
-    exp = Fraction_create(44, 5);
-    testSum += testFn("Fraction_Subtract (9/1 - 1/5", exp, res);
-    Fraction_massDelete(4, res, exp, f1, f2);
-
-    return testSum;
-}
-
-int pointTest () {
-    PFraction f1, f2, res, exp;
-    int testSum = 0;
-
-    f1 = Fraction_create(3, 2);
-    f2 = Fraction_create(5, 18);
-
-    res = Fraction_multiply(f1, f2);
-    exp = Fraction_create(5, 12);
-    testSum += testFn("Fraction_Multiply (1/2 * 5/18)", exp, res);
-    Fraction_massDelete(2, res, exp);
-
-    res = Fraction_divide(f2, f1);
-    exp = Fraction_create(5, 27);
-    testSum += testFn("Fraction_Divide (5/18 / 3/2)", exp, res);
-    Fraction_massDelete(4, res, exp, f1, f2);
-
-    return testSum;
-}
-
-void alert (int count) {
-    printf("|-------------------------|\n");
-    printf("|         WARNING         |\n");
-    printf("|  SOME TESTS FAILED (%d)  |\n", count);
-    printf("|-------------------------|\n\n");
+    if (expected != returnValue) globalHasFailed = 1;
+    Fraction_massDelete(2, paramA, paramB);
 }

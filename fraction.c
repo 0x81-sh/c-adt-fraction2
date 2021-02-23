@@ -12,6 +12,7 @@ void checkSign(PFraction _this);
 void reduce(PFraction _this);
 int gcd(int a, int b); //greatest common divisor
 int lcm(int a, int b); //least common multiple
+float calculateValue (PFraction pFraction);
 
 PFraction Fraction_create (int num, int denom) {
     PFraction allocated = (PFraction) malloc(sizeof(struct Fraction));
@@ -83,27 +84,27 @@ void Fraction_massDelete(int count, ...) {
 }
 
 int Fraction_equal(PFraction _this, PFraction f) {
-
+    return _this->num == f->num && _this->denom == f->denom;
 }
 
 int Fraction_unequal(PFraction _this, PFraction f) {
-
+    return !Fraction_equal(_this, f);
 }
 
 int Fraction_greater(PFraction _this, PFraction f) {
-
+    return calculateValue(_this) < calculateValue(f);
 }
 
 int Fraction_smaller(PFraction _this, PFraction f) {
-
+    return calculateValue(_this) > calculateValue(f);
 }
 
 int Fraction_smallerOrEqual(PFraction _this, PFraction f) {
-
+    return calculateValue(_this) >= calculateValue(f);
 }
 
 int Fraction_greaterOrEqual(PFraction _this, PFraction f) {
-    
+    return calculateValue(_this) <= calculateValue(f);
 }
 
 // --------- helper functions
@@ -142,4 +143,8 @@ int gcd (int a, int b) {
 
 int lcm (int a, int b) {
     return abs(a / gcd(a, b) * b);
+}
+
+float calculateValue (PFraction pFraction) {
+    return (float) pFraction->num / (float) pFraction->denom;
 }
